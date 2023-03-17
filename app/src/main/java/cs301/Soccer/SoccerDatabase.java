@@ -3,6 +3,7 @@ package cs301.Soccer;
 import android.util.Log;
 import cs301.Soccer.soccerPlayer.SoccerPlayer;
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.PrintWriter;
@@ -187,7 +188,41 @@ public class SoccerDatabase implements SoccerDB {
     // read data from file
     @Override
     public boolean readData(File file) {
-        return file.exists();
+        if (file.exists()) {
+            try {
+                Scanner scanner = new Scanner(file);
+                scanner.useDelimiter("\n");
+
+                while (scanner.hasNext()) {
+                    String first = scanner.next();
+                    String last = scanner.next();
+                    String team = scanner.next();
+                    int goals = Integer.parseInt(scanner.next());
+                    int redCards = Integer.parseInt(scanner.next());
+                    int yellowCards = Integer.parseInt(scanner.next());
+                    int uniform = Integer.parseInt(scanner.next());
+
+                    SoccerPlayer temp = new SoccerPlayer(first, last, uniform, team);
+
+                    for (int i = 0; i < goals; i ++) {temp.bumpGoals();}
+                    for (int i = 0; i < redCards; i ++) {temp.bumpRedCards();}
+                    for (int i = 0; i < yellowCards; i ++) {temp.bumpYellowCards();}
+
+                    String key = makeKey(first,last);
+
+                    if (database.containsKey(key)) {
+                        database.remove(key);
+                    }
+                    database.put(key, temp);
+                }
+
+                return true;
+
+            } catch (FileNotFoundException e) {
+                return false;
+            }
+        }
+        return false;
     }
 
     /**
@@ -211,7 +246,6 @@ public class SoccerDatabase implements SoccerDB {
                 pw.println(logString(String.valueOf(s.getRedCards())));
                 pw.println(logString(String.valueOf(s.getYellowCards())));
                 pw.println(logString(String.valueOf(s.getUniform())));
-                pw.println(logString("\n"));
             }
 
             pw.close();
@@ -228,7 +262,7 @@ public class SoccerDatabase implements SoccerDB {
      * @return the string s, unchanged
      */
     private String logString(String s) {
-        Log.i("write string", s);
+        //Log.i("write string", s);
         return s;
     }
 
@@ -240,7 +274,16 @@ public class SoccerDatabase implements SoccerDB {
     // return list of teams
     @Override
     public HashSet<String> getTeams() {
-        return new HashSet<String>();
+        HashSet<String> teams = new HashSet<>();
+        Collection<SoccerPlayer> players = database.values();
+
+        for (SoccerPlayer s : players) {
+            if (!teams.contains(s.getTeamName())) {
+                teams.add(s.getTeamName());
+            }
+        }
+
+        return teams;
     }
 
     /**
